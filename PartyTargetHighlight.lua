@@ -60,27 +60,27 @@ local function DrawDots(overlay, width, height, size)
     end
 end
 
-local function DrawGlow(overlay, width, height, size)
-    local function DrawBand(inner, outer, alpha)
-        local thickness = outer - inner
-        local span = width + outer * 2
-        local function DrawEdge(x, y, edgeWidth, edgeHeight)
-            local texture = PlaceTexture(overlay, x, y, edgeWidth, edgeHeight)
-            texture:SetVertexColor(1, 1, 1, 1)
-            texture:SetColorTexture(settings.r, settings.g, settings.b, alpha)
-        end
-        DrawEdge(-outer, -outer, span, thickness)
-        DrawEdge(-outer, height + inner, span, thickness)
-        DrawEdge(-outer, -inner, thickness, height + inner * 2)
-        DrawEdge(width + inner, -inner, thickness, height + inner * 2)
+local function DrawOutline(overlay, width, height, inner, outer, alpha)
+    local thickness = outer - inner
+    local span = width + outer * 2
+    local function DrawEdge(x, y, edgeWidth, edgeHeight)
+        local texture = PlaceTexture(overlay, x, y, edgeWidth, edgeHeight)
+        texture:SetVertexColor(1, 1, 1, 1)
+        texture:SetColorTexture(settings.r, settings.g, settings.b, alpha)
     end
+    DrawEdge(-outer, -outer, span, thickness)
+    DrawEdge(-outer, height + inner, span, thickness)
+    DrawEdge(-outer, -inner, thickness, height + inner * 2)
+    DrawEdge(width + inner, -inner, thickness, height + inner * 2)
+end
 
+local function DrawGlow(overlay, width, height, size)
     local core = math.max(1, size * 0.35)
-    DrawBand(0, core, 0.95)
+    DrawOutline(overlay, width, height, 0, core, 0.95)
     local step = size * 1.5 / 8
     for band = 1, 8 do
         local inner = core + (band - 1) * step
-        DrawBand(inner, inner + step, 0.6 * ((9 - band) / 8) ^ 2)
+        DrawOutline(overlay, width, height, inner, inner + step, 0.6 * ((9 - band) / 8) ^ 2)
     end
 end
 
@@ -90,6 +90,8 @@ local function DrawHighlight(overlay)
     if width and height and width > 0 and height > 0 then
         if settings.style == "glow" then
             DrawGlow(overlay, width, height, settings.thickness)
+        elseif settings.style == "solid-border" then
+            DrawOutline(overlay, width, height, 0, settings.thickness, 1)
         else
             DrawDots(overlay, width, height, settings.thickness)
         end
@@ -219,6 +221,7 @@ local function CreateSettingsPanel()
             ApplyAppearance()
         end
         root:CreateRadio("Dotted border", IsSelected, SelectStyle, "dotted-border")
+        root:CreateRadio("Solid border", IsSelected, SelectStyle, "solid-border")
         root:CreateRadio("Glow", IsSelected, SelectStyle, "glow")
     end)
 
@@ -289,7 +292,9 @@ events:SetScript("OnEvent", function(self, event, loadedAddon)
             end
             settings = PartyTargetHighlightDB
             settingsRevision = 1
-            settings.style = settings.style == "glow" and "glow" or "dotted-border"
+            if settings.style ~= "glow" and settings.style ~= "solid-border" then
+                settings.style = "dotted-border"
+            end
             settings.thickness = NormalizeThickness(settings.thickness, defaultThickness)
             settings.r = NormalizeColor(settings.r, 1)
             settings.g = NormalizeColor(settings.g, 1)
