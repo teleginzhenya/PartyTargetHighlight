@@ -1,0 +1,8 @@
+## Interface: 120105
+## Title: Party Target Highlight
+## Notes: Highlights your current target on party frames.
+## Version: 1.0.0
+## OptionalDeps: EllesmereUIRaidFrames
+## SavedVariables: PartyTargetHighlightDB
+
+PartyTargetHighlight.lua
